@@ -1,42 +1,38 @@
 import telepot
-import requests
 from telepot.loop import MessageLoop
 from time import sleep
-from xml.dom import minidom
+import wolframalpha
 
-
-
-token = ""
-appID = ""
-chatID =
-
-plus = "%2B"
-divide = "%2F"
-
+token = "000000000:XXXXXXXXXXXXXXXXXXXXXXXX-XXXXXXXXXX"
+appID = "XXXXXX-XXXXXXXXXX"
+chatID = 000000000
 
 bot = telepot.Bot(token)
+client = wolframalpha.Client(appID)
 
 
 def handle(msg):
     content_type, chat_type, chat_id = telepot.glance(msg)
     print(content_type, chat_type, chat_id)
-
-    if(chat_id == chatID):
-        text = msg['text']
-
-        text = str(text).replace("+", plus)
-        text = str(text).replace("/", divide)
-
-        response = requests.get("http://api.wolframalpha.com/v2/query?appid=" + str(appID) + "&input=" + text)
-        response = minidom.parseString(response.text)
-        result = response.getElementsByTagName("plaintext")
-        result = (result[1].firstChild.nodeValue)
-        print(str(chat_id) + ";" + str(result))
-        bot.sendMessage(chat_id, str(result))
+    if not str(msg['text']).startswith("/"):
+        if chat_id == chatID:
+            text = msg['text']
+            res = client.query(text)
+            print(res)
+            try:
+                bot.sendMessage(chat_id, next(res.results).text)
+            except AttributeError:
+                bot.sendMessage(chat_id, "Not a valid query")
+            except StopIteration:
+                bot.sendMessage(chat_id, "Possible format error")
+            except Exception:
+                bot.sendMessage(chat_id, "An exception occurred :(")
     else:
-        bot.sendMessage(chat_id,"Create your own WolframAlpha bot : https://github.com/LorenzoScebba/wolframalpha-telegram-bot")
+        bot.sendMessage("Send me a query to start!")
 
-MessageLoop(bot,handle).run_as_thread()
+
+MessageLoop(bot, handle).run_as_thread()
+print("Running")
 
 while 1:
     sleep(5)
